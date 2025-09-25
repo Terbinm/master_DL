@@ -224,7 +224,7 @@ def calculate_model_flops(model: RetinaClassifier, input_size: tuple = (3, 224, 
 
 if __name__ == "__main__":
     # 測試模型創建和基本功能
-    from config import Config
+    from config.config import Config
 
     print("測試視網膜分類模型...")
 

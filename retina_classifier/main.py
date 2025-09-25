@@ -221,7 +221,7 @@ def train_model():
         )
 
         # 記錄模型架構
-        visualizer.log_model_graph(model, Config.IMAGE_SIZE)
+        visualizer.log_model_graph(model, input_size=(3, *Config.IMAGE_SIZE))
 
         # 記錄超參數
         hparams = {
@@ -259,6 +259,8 @@ def train_model():
                 val_acc=val_acc,
                 learning_rate=lr
             )
+
+            visualizer.writer.flush()
 
         # 9. 評估模型
         print("\n步驟 8: 評估模型...")
@@ -327,8 +329,6 @@ def train_model():
         print(f"最佳模型路徑: {trainer.best_model_path}")
         print(f"結果保存至: {Config.RESULTS_PATH}")
         print(f"TensorBoard 日誌: {visualizer.log_dir}")
-        print("\n可以使用以下命令查看 TensorBoard:")
-        print(f"tensorboard --logdir={Config.LOGS_PATH}")
 
     except Exception as e:
         print(f"\n❌ 訓練過程中發生錯誤: {e}")

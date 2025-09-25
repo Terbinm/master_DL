@@ -490,8 +490,8 @@ class RetinaTrainer:
         # 損失曲線
         axes[0, 0].plot(epochs, self.history['train_loss'], 'b-', label='訓練損失')
         if self.history['val_loss']:
-            axes[0, 0].plot(epochs, self.history['val_loss'], 'r-', label='驗證損失')
-        axes[0, 0].set_title('損失曲線')
+            axes[0, 0].plot(epochs, self.history['val_loss'], 'r-', label='Validation Loss')
+        axes[0, 0].set_title('Loss Curve')
         axes[0, 0].set_xlabel('Epoch')
         axes[0, 0].set_ylabel('Loss')
         axes[0, 0].legend()
@@ -500,8 +500,8 @@ class RetinaTrainer:
         # 準確率曲線
         axes[0, 1].plot(epochs, self.history['train_acc'], 'b-', label='訓練準確率')
         if self.history['val_acc']:
-            axes[0, 1].plot(epochs, self.history['val_acc'], 'r-', label='驗證準確率')
-        axes[0, 1].set_title('準確率曲線')
+            axes[0, 1].plot(epochs, self.history['val_acc'], 'r-', label='Validation Accuracy')
+        axes[0, 1].set_title('Accuracy Curve')
         axes[0, 1].set_xlabel('Epoch')
         axes[0, 1].set_ylabel('Accuracy')
         axes[0, 1].legend()
@@ -509,7 +509,7 @@ class RetinaTrainer:
 
         # 學習率曲線
         axes[1, 0].plot(epochs, self.history['learning_rate'], 'g-')
-        axes[1, 0].set_title('學習率變化')
+        axes[1, 0].set_title('Learning Rate Schedule')
         axes[1, 0].set_xlabel('Epoch')
         axes[1, 0].set_ylabel('Learning Rate')
         axes[1, 0].set_yscale('log')
@@ -544,10 +544,9 @@ class RetinaTrainer:
             xticklabels=self.class_names,
             yticklabels=self.class_names
         )
-
-        plt.title('混淆矩陣')
-        plt.xlabel('預測類別')
-        plt.ylabel('真實類別')
+        plt.title('Confusion Matrix')
+        plt.xlabel('Predicted Label')
+        plt.ylabel('True Label')
 
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
