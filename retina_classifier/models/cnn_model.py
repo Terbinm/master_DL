@@ -1,225 +1,217 @@
-"""
-Retina Damage Classification Model
-基於 EfficientNet-B0 的輕量級視網膜損傷分類模型
-針對 RTX 4090 優化的高效實現
-"""
+# models/cnn_model.py
+import math
+from typing import Dict, Any, Optional
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision import models
-import timm
-from typing import Optional, Dict, Any
 
 
-class RetinaClassifier(nn.Module):
+# ── 基本元件 ─────────────────────────────────────────────────────────────────────
+
+class SqueezeExcite(nn.Module):
+    def __init__(self, c: int, se_ratio: float = 0.25):
+        super().__init__()
+        c_se = max(1, int(c * se_ratio))
+        self.fc1 = nn.Conv2d(c, c_se, kernel_size=1, bias=True)
+        self.fc2 = nn.Conv2d(c_se, c, kernel_size=1, bias=True)
+
+    def forward(self, x):
+        s = F.adaptive_avg_pool2d(x, 1)
+        s = F.silu(self.fc1(s))
+        s = torch.sigmoid(self.fc2(s))
+        return x * s
+
+
+class ConvBNAct(nn.Module):
+    def __init__(self, c_in, c_out, k, s=1, g=1):
+        super().__init__()
+        p = (k - 1) // 2
+        self.conv = nn.Conv2d(c_in, c_out, k, s, p, groups=g, bias=False)
+        self.bn   = nn.BatchNorm2d(c_out)
+        self.act  = nn.SiLU(inplace=True)
+
+    def forward(self, x):
+        return self.act(self.bn(self.conv(x)))
+
+
+class MBConv(nn.Module):
     """
-    視網膜損傷分類模型
-    基於 EfficientNet-B0 的遷移學習實現
+    EfficientNet 風格的 MBConv (expansion → depthwise → SE → projection)。
+    支援 stride {1,2} 與殘差連接。
     """
+    def __init__(self, c_in, c_out, k, stride, expand_ratio, se_ratio=0.25, drop_path=0.0):
+        super().__init__()
+        self.stride = stride
+        self.use_res = (stride == 1 and c_in == c_out)
+        mid = int(c_in * expand_ratio)
 
-    def __init__(
-            self,
-            num_classes: int = 4,
-            backbone: str = 'efficientnet_b0',
-            pretrained: bool = True,
-            dropout_rate: float = 0.3,
-            freeze_backbone: bool = False
-    ):
-        """
-        初始化模型
+        layers = []
+        # expand
+        if expand_ratio != 1:
+            layers += [ConvBNAct(c_in, mid, 1, 1)]
+        else:
+            mid = c_in
 
-        Args:
-            num_classes: 分類類別數量
-            backbone: 骨幹網路名稱
-            pretrained: 是否使用預訓練權重
-            dropout_rate: Dropout 比例
-            freeze_backbone: 是否凍結骨幹網路
-        """
-        super(RetinaClassifier, self).__init__()
+        # depthwise
+        layers += [ConvBNAct(mid, mid, k, stride, g=mid)]
+        # SE
+        layers += [SqueezeExcite(mid, se_ratio)]
+        # project
+        layers += [nn.Conv2d(mid, c_out, 1, 1, 0, bias=False),
+                   nn.BatchNorm2d(c_out)]
+        self.block = nn.Sequential(*layers)
 
+        self.drop_path = DropPath(drop_path) if drop_path > 0 else nn.Identity()
+
+    def forward(self, x):
+        out = self.block(x)
+        if self.use_res:
+            out = x + self.drop_path(out)
+        return out
+
+
+class DropPath(nn.Module):
+    # 簡易 Stochastic Depth（訓練時才生效）
+    def __init__(self, drop_prob=0.0):
+        super().__init__()
+        self.drop_prob = float(drop_prob)
+
+    def forward(self, x):
+        if not self.training or self.drop_prob == 0.0:
+            return x
+        keep = 1.0 - self.drop_prob
+        shape = (x.shape[0],) + (1,) * (x.ndim - 1)
+        random_tensor = keep + torch.rand(shape, dtype=x.dtype, device=x.device)
+        random_tensor.floor_()
+        return x / keep * random_tensor
+
+
+# ── EfficientNet-B0 相似骨幹（從零初始化） ─────────────────────────────────────────
+
+class EfficientNetB0Like(nn.Module):
+    """
+    與 EfficientNet-B0 相似的自家實作：
+    Stage 組態參考 B0（寬/深度係數 = 1.0），但完全**隨機初始化**，不依賴 timm/預訓練。
+    """
+    def __init__(self, num_classes: int = 4, dropout_rate: float = 0.3, drop_path_rate: float = 0.1):
+        super().__init__()
         self.num_classes = num_classes
-        self.backbone_name = backbone
+        self.backbone_name = 'efficientnet_b0_like'
         self.dropout_rate = dropout_rate
 
-        # 載入 EfficientNet-B0 骨幹網路
-        self.backbone = timm.create_model(
-            backbone,
-            pretrained=pretrained,
-            num_classes=0,  # 移除原始分類頭
-            global_pool=''  # 移除全局池化
-        )
+        # B0 stage 配置: (exp, k, c_out, repeats, stride)
+        cfg = [
+            # stem 之後的各 stage
+            (1, 3, 16, 1, 1),
+            (6, 3, 24, 2, 2),
+            (6, 5, 40, 2, 2),
+            (6, 3, 80, 3, 2),
+            (6, 5,112, 3, 1),
+            (6, 5,192, 4, 2),
+            (6, 3,320, 1, 1),
+        ]
 
-        # 獲取特徵維度
-        with torch.no_grad():
-            dummy_input = torch.randn(1, 3, 224, 224)
-            features = self.backbone(dummy_input)
-            self.feature_dim = features.shape[1]
+        # Stem
+        layers = []
+        c = 32
+        layers.append(ConvBNAct(3, c, 3, 2))  # 224→112
 
-        # 凍結骨幹網路（可選）
-        if freeze_backbone:
-            for param in self.backbone.parameters():
-                param.requires_grad = False
+        # 分配逐層 drop_path
+        total_blocks = sum(r for *_, r, _ in [(e,k,c_out,r,s) for e,k,c_out,r,s in cfg])
+        dp_idx = 0
 
-        # 自定義分類頭
-        self.classifier = nn.Sequential(
-            nn.AdaptiveAvgPool2d((1, 1)),  # 全局平均池化
+        # Stages
+        in_ch = c
+        for exp, k, c_out, repeats, stride in cfg:
+            for i in range(repeats):
+                s = stride if i == 0 else 1
+                drop_p = drop_path_rate * dp_idx / max(1, total_blocks - 1)
+                layers.append(MBConv(in_ch, c_out, k=k, stride=s, expand_ratio=exp, se_ratio=0.25, drop_path=drop_p))
+                in_ch = c_out
+                dp_idx += 1
+
+        # Head
+        self.features = nn.Sequential(*layers)
+        self.head = nn.Sequential(
+            ConvBNAct(in_ch, 1280, 1, 1),
+            nn.AdaptiveAvgPool2d(1),
             nn.Flatten(),
             nn.Dropout(dropout_rate),
-            nn.Linear(self.feature_dim, 512),
-            nn.ReLU(inplace=True),
-            nn.Dropout(dropout_rate),
-            nn.Linear(512, num_classes)
+            nn.Linear(1280, num_classes)
         )
 
-        # 初始化分類頭權重
-        self._initialize_weights()
+        self._init_weights()
 
-    def _initialize_weights(self):
-        """初始化分類頭權重"""
-        for m in self.classifier.modules():
-            if isinstance(m, nn.Linear):
-                nn.init.normal_(m.weight, 0, 0.01)
+    def _init_weights(self):
+        # Kaiming/He 初始化
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')  # SiLU 也可用
                 if m.bias is not None:
-                    nn.init.constant_(m.bias, 0)
+                    nn.init.zeros_(m.bias)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.ones_(m.weight)
+                nn.init.zeros_(m.bias)
+            elif isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, 0, 0.02)
+                nn.init.zeros_(m.bias)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        前向傳播
+    def forward(self, x):
+        x = self.features(x)
+        x = self.head(x)
+        return x
 
-        Args:
-            x: 輸入圖像 tensor，形狀 [batch_size, 3, 224, 224]
-
-        Returns:
-            分類預測結果，形狀 [batch_size, num_classes]
-        """
-        # 特徵提取
-        features = self.backbone(x)
-
-        # 分類預測
-        output = self.classifier(features)
-
-        return output
-
-    def extract_features(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        提取特徵向量（用於可視化或進一步分析）
-
-        Args:
-            x: 輸入圖像 tensor
-
-        Returns:
-            特徵向量，形狀 [batch_size, feature_dim]
-        """
-        features = self.backbone(x)
-        pooled_features = F.adaptive_avg_pool2d(features, (1, 1))
-        return pooled_features.flatten(1)
-
-    def unfreeze_backbone(self, num_layers: Optional[int] = None):
-        """
-        解凍骨幹網路進行微調
-
-        Args:
-            num_layers: 解凍的層數，None 表示解凍所有層
-        """
-        backbone_modules = list(self.backbone.children())
-
-        if num_layers is None:
-            # 解凍所有層
-            for param in self.backbone.parameters():
-                param.requires_grad = True
-        else:
-            # 解凍最後 num_layers 層
-            for module in backbone_modules[-num_layers:]:
-                for param in module.parameters():
-                    param.requires_grad = True
-
+    # 與原訓練流程相容的資訊輸出
     def get_model_info(self) -> Dict[str, Any]:
-        """獲取模型信息"""
         total_params = sum(p.numel() for p in self.parameters())
         trainable_params = sum(p.numel() for p in self.parameters() if p.requires_grad)
-
         return {
             'backbone': self.backbone_name,
             'num_classes': self.num_classes,
             'dropout_rate': self.dropout_rate,
-            'feature_dim': self.feature_dim,
+            'feature_dim': 1280,
             'total_params': total_params,
             'trainable_params': trainable_params,
-            'model_size_mb': total_params * 4 / (1024 ** 2)  # 假設 float32
+            'model_size_mb': total_params * 4 / (1024 ** 2)
         }
 
 
-def create_retina_model(config: Dict[str, Any]) -> RetinaClassifier:
+# ── 工廠：根據設定建立模型 ────────────────────────────────────────────────────────
+
+def create_retina_model(config: Dict[str, Any]) -> nn.Module:
     """
-    創建視網膜分類模型的工廠函數
-
-    Args:
-        config: 配置字典，包含模型參數
-
-    Returns:
-        初始化的模型實例
+    若 backbone == 'efficientnet_b0_like' → 從零初始化的自定義模型
+    否則保留原行為（可選：如你仍想保留舊路線）。
     """
-    model = RetinaClassifier(
-        num_classes=config.get('num_classes', 4),
-        backbone=config.get('backbone', 'efficientnet_b0'),
-        pretrained=config.get('pretrained', True),
-        dropout_rate=config.get('dropout_rate', 0.3)
-    )
+    backbone = config.get('backbone', 'efficientnet_b0_like')
+    num_classes = config.get('num_classes', 4)
+    dropout_rate = config.get('dropout_rate', 0.3)
 
-    return model
-
-
-def load_pretrained_model(checkpoint_path: str, config: Dict[str, Any]) -> RetinaClassifier:
-    """
-    載入預訓練模型
-
-    Args:
-        checkpoint_path: 檢查點文件路徑
-        config: 模型配置
-
-    Returns:
-        載入權重的模型實例
-    """
-    model = create_retina_model(config)
-
-    # 載入檢查點
-    checkpoint = torch.load(checkpoint_path, map_location='cpu')
-
-    # 處理不同的檢查點格式
-    if 'model_state_dict' in checkpoint:
-        model.load_state_dict(checkpoint['model_state_dict'])
+    if backbone == 'efficientnet_b0_like':
+        return EfficientNetB0Like(num_classes=num_classes, dropout_rate=dropout_rate)
     else:
-        model.load_state_dict(checkpoint)
-
-    return model
+        # 可選：若你仍想保留舊的遷移學習路線，放回去；不需要則刪除下面區塊
+        import timm
+        model = timm.create_model(backbone, pretrained=False, num_classes=num_classes)
+        return model
 
 
 # 輔助函數：計算模型 FLOPs
-def calculate_model_flops(model: RetinaClassifier, input_size: tuple = (3, 224, 224)) -> int:
+def calculate_model_flops(model: torch.nn.Module, input_size: tuple = (3, 224, 224)) -> int:
     """
-    計算模型的浮點運算次數 (FLOPs)
-
+    計算模型 FLOPs
     Args:
-        model: 模型實例
-        input_size: 輸入張量尺寸
-
+        model: 任意 torch.nn.Module（例如 EfficientNetB0Like）
+        input_size: 輸入大小 (C, H, W)
     Returns:
-        FLOPs 數量
+        int: FLOPs 數量
     """
-    try:
-        from fvcore.nn import FlopCountMode, flop_count
+    from thop import profile
 
-        model.eval()
-        inputs = torch.randn(1, *input_size)
-
-        flops_dict, _ = flop_count(model, (inputs,), supported_ops=None)
-        total_flops = sum(flops_dict.values())
-
-        return total_flops
-    except ImportError:
-        print("警告: 無法導入 fvcore，跳過 FLOPs 計算")
-        return -1
+    dummy = torch.randn(1, *input_size)
+    flops, _ = profile(model, inputs=(dummy,), verbose=False)
+    return int(flops)
 
 
 if __name__ == "__main__":

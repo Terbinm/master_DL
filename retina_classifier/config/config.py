@@ -51,8 +51,8 @@ class Config:
 
     # ==================== 模型配置 ====================
     # 使用 EfficientNet-B0 作為骨幹網路
-    BACKBONE = 'efficientnet_b0'
-    PRETRAINED = True
+    BACKBONE = 'efficientnet_b0_like'
+    PRETRAINED = False
     DROPOUT_RATE = 0.3
 
     # ==================== 訓練配置 ====================
