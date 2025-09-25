@@ -1,0 +1,84 @@
+C:\led_code\master_DL\.venv\Scripts\python.exe C:\led_code\master_DL\teacher_ipynb\main.py
+classes: ['DRUSEN', 'NORMAL']
+class_to_idx: {'DRUSEN': 0, 'NORMAL': 1}
+sizes: 34931 16 484
+device: cuda
+篩選後 sizes: 1000 16 484
+train  -> DRUSEN: 245, NORMAL: 755, total: 1000
+test   -> DRUSEN: 242,  NORMAL: 242,  total: 484
+開始epoch訓練...
+Epoch 01/100 | train_loss: 0.8697 train_acc: 0.6870 | val_loss: 0.7005 val_acc: 0.5000 | dt:27.7s
+  -> Saved new best to best_gender_model_v1.pth (val_acc=0.5000)
+Epoch 02/100 | train_loss: 0.5843 train_acc: 0.7550 | val_loss: 0.7670 val_acc: 0.5000 | dt:1.1s
+Epoch 03/100 | train_loss: 0.5664 train_acc: 0.7540 | val_loss: 0.8089 val_acc: 0.5000 | dt:1.0s
+Epoch 04/100 | train_loss: 0.5519 train_acc: 0.7550 | val_loss: 0.8129 val_acc: 0.5000 | dt:1.0s
+Epoch 05/100 | train_loss: 0.5354 train_acc: 0.7550 | val_loss: 0.8048 val_acc: 0.5000 | dt:1.1s
+Epoch 06/100 | train_loss: 0.5205 train_acc: 0.7550 | val_loss: 0.7525 val_acc: 0.5000 | dt:1.1s
+Epoch 07/100 | train_loss: 0.5135 train_acc: 0.7550 | val_loss: 0.6543 val_acc: 0.5000 | dt:1.1s
+Epoch 08/100 | train_loss: 0.4979 train_acc: 0.7570 | val_loss: 0.6032 val_acc: 0.5021 | dt:1.1s
+  -> Saved new best to best_gender_model_v1.pth (val_acc=0.5021)
+Epoch 09/100 | train_loss: 0.4830 train_acc: 0.7580 | val_loss: 0.5762 val_acc: 0.5041 | dt:1.0s
+  -> Saved new best to best_gender_model_v1.pth (val_acc=0.5041)
+Epoch 10/100 | train_loss: 0.4545 train_acc: 0.7580 | val_loss: 0.5577 val_acc: 0.5000 | dt:1.1s
+Epoch 11/100 | train_loss: 0.4630 train_acc: 0.7640 | val_loss: 0.5279 val_acc: 0.5062 | dt:1.1s
+  -> Saved new best to best_gender_model_v1.pth (val_acc=0.5062)
+Epoch 12/100 | train_loss: 0.4647 train_acc: 0.7700 | val_loss: 0.6010 val_acc: 0.5145 | dt:1.0s
+  -> Saved new best to best_gender_model_v1.pth (val_acc=0.5145)
+Epoch 13/100 | train_loss: 0.4493 train_acc: 0.7810 | val_loss: 0.5823 val_acc: 0.5682 | dt:1.1s
+  -> Saved new best to best_gender_model_v1.pth (val_acc=0.5682)
+Epoch 14/100 | train_loss: 0.4306 train_acc: 0.7790 | val_loss: 0.4892 val_acc: 0.6219 | dt:1.1s
+  -> Saved new best to best_gender_model_v1.pth (val_acc=0.6219)
+Epoch 15/100 | train_loss: 0.4029 train_acc: 0.7900 | val_loss: 0.4398 val_acc: 0.7913 | dt:1.0s
+  -> Saved new best to best_gender_model_v1.pth (val_acc=0.7913)
+Epoch 16/100 | train_loss: 0.3958 train_acc: 0.8010 | val_loss: 0.4144 val_acc: 0.8492 | dt:1.1s
+  -> Saved new best to best_gender_model_v1.pth (val_acc=0.8492)
+Epoch 17/100 | train_loss: 0.3703 train_acc: 0.8180 | val_loss: 0.3675 val_acc: 0.8946 | dt:1.0s
+  -> Saved new best to best_gender_model_v1.pth (val_acc=0.8946)
+Epoch 18/100 | train_loss: 0.3874 train_acc: 0.7860 | val_loss: 0.5486 val_acc: 0.6839 | dt:1.1s
+Epoch 19/100 | train_loss: 0.3811 train_acc: 0.8120 | val_loss: 0.3884 val_acc: 0.8843 | dt:1.1s
+Epoch 20/100 | train_loss: 0.3444 train_acc: 0.8210 | val_loss: 0.3614 val_acc: 0.8719 | dt:1.1s
+Epoch 21/100 | train_loss: 0.3436 train_acc: 0.8160 | val_loss: 0.3123 val_acc: 0.9401 | dt:1.1s
+  -> Saved new best to best_gender_model_v1.pth (val_acc=0.9401)
+Epoch 22/100 | train_loss: 0.3366 train_acc: 0.8130 | val_loss: 0.3550 val_acc: 0.8740 | dt:1.1s
+Epoch 23/100 | train_loss: 0.3461 train_acc: 0.8050 | val_loss: 0.3437 val_acc: 0.8864 | dt:1.1s
+Epoch 24/100 | train_loss: 0.3277 train_acc: 0.8200 | val_loss: 0.2918 val_acc: 0.9380 | dt:1.1s
+Epoch 25/100 | train_loss: 0.3363 train_acc: 0.8050 | val_loss: 0.3148 val_acc: 0.9070 | dt:1.1s
+Epoch 26/100 | train_loss: 0.3213 train_acc: 0.8120 | val_loss: 0.2987 val_acc: 0.9360 | dt:1.1s
+Epoch 27/100 | train_loss: 0.3111 train_acc: 0.8230 | val_loss: 0.3340 val_acc: 0.8926 | dt:1.1s
+Epoch 28/100 | train_loss: 0.3226 train_acc: 0.8020 | val_loss: 0.3348 val_acc: 0.8988 | dt:1.1s
+Epoch 29/100 | train_loss: 0.3113 train_acc: 0.8180 | val_loss: 0.2631 val_acc: 0.9504 | dt:1.1s
+  -> Saved new best to best_gender_model_v1.pth (val_acc=0.9504)
+Epoch 30/100 | train_loss: 0.3032 train_acc: 0.8230 | val_loss: 0.5895 val_acc: 0.7459 | dt:1.1s
+Epoch 31/100 | train_loss: 0.3165 train_acc: 0.8070 | val_loss: 0.2767 val_acc: 0.9380 | dt:1.1s
+Epoch 32/100 | train_loss: 0.2986 train_acc: 0.8270 | val_loss: 0.2551 val_acc: 0.9463 | dt:1.1s
+Epoch 33/100 | train_loss: 0.3021 train_acc: 0.8230 | val_loss: 0.2973 val_acc: 0.9029 | dt:1.1s
+Epoch 34/100 | train_loss: 0.2919 train_acc: 0.8190 | val_loss: 0.2455 val_acc: 0.9587 | dt:1.1s
+  -> Saved new best to best_gender_model_v1.pth (val_acc=0.9587)
+Epoch 35/100 | train_loss: 0.2794 train_acc: 0.8280 | val_loss: 0.2766 val_acc: 0.9318 | dt:1.0s
+Epoch 36/100 | train_loss: 0.2746 train_acc: 0.8330 | val_loss: 0.2880 val_acc: 0.9194 | dt:1.1s
+Epoch 37/100 | train_loss: 0.2701 train_acc: 0.8430 | val_loss: 0.2344 val_acc: 0.9421 | dt:1.1s
+Epoch 38/100 | train_loss: 0.2844 train_acc: 0.8420 | val_loss: 0.2458 val_acc: 0.9463 | dt:1.1s
+Epoch 39/100 | train_loss: 0.3063 train_acc: 0.8090 | val_loss: 0.2762 val_acc: 0.9318 | dt:1.1s
+Epoch 40/100 | train_loss: 0.2986 train_acc: 0.8150 | val_loss: 0.4871 val_acc: 0.8058 | dt:1.0s
+Epoch 41/100 | train_loss: 0.2820 train_acc: 0.8360 | val_loss: 0.2278 val_acc: 0.9587 | dt:1.1s
+Epoch 42/100 | train_loss: 0.2694 train_acc: 0.8210 | val_loss: 0.2169 val_acc: 0.9566 | dt:1.1s
+Epoch 43/100 | train_loss: 0.2772 train_acc: 0.8330 | val_loss: 0.2612 val_acc: 0.9339 | dt:1.0s
+Epoch 44/100 | train_loss: 0.2885 train_acc: 0.8250 | val_loss: 0.2242 val_acc: 0.9483 | dt:1.0s
+Early stopping...
+best_val_acc: 0.9586776859504132
+[TEST] accuracy: 0.9587
+
+[TEST] classification_report:
+              precision    recall  f1-score   support
+
+      DRUSEN     0.9744    0.9421    0.9580       242
+      NORMAL     0.9440    0.9752    0.9593       242
+
+    accuracy                         0.9587       484
+   macro avg     0.9592    0.9587    0.9587       484
+weighted avg     0.9592    0.9587    0.9587       484
+
+[TEST] confusion_matrix (rows=true, cols=pred):
+ [[228  14]
+ [  6 236]]
+[TEST] ROC-AUC (NORMAL as positive): 0.9947

@@ -50,8 +50,7 @@ class Config:
     STD = [0.229, 0.224, 0.225]
 
     # ==================== 模型配置 ====================
-    # 使用 EfficientNet-B0 作為骨幹網路
-    BACKBONE = 'efficientnet_b0_like'
+    BACKBONE = 'classic_cnn'
     PRETRAINED = False
     DROPOUT_RATE = 0.3
 

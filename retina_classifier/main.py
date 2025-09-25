@@ -84,7 +84,7 @@ def check_data_structure():
         print("│   ├── DME/")
         print("│   ├── DRUSEN/")
         print("│   └── NORMAL/")
-        print("└── test/ (可選)")
+        print("└── test/")
         print("    ├── CNV/")
         print("    ├── DME/")
         print("    ├── DRUSEN/")
