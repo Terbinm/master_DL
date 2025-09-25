@@ -1,0 +1,55 @@
+# 視網膜損傷分類系統 - 套件依賴清單
+# 針對 RTX 4090 + PyTorch 2.5.1 + CUDA 12.1 優化
+
+# 深度學習核心套件
+# PyTorch - 請從官網安裝適合您系統的版本
+# https://pytorch.org/get-started/locally/
+# 對於 CUDA 12.1，建議使用：
+# pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+
+# TensorBoard 和視覺化
+tensorboard>=2.14.0            # TensorBoard 日誌記錄
+matplotlib>=3.7.0              # 繪圖工具
+seaborn>=0.12.0                # 統計繪圖
+plotly>=5.15.0                 # 互動式圖表
+
+# 數據處理和科學計算
+numpy>=1.24.0                  # 數值計算
+pandas>=2.0.0                  # 數據處理
+scikit-learn>=1.3.0            # 機器學習工具
+opencv-python>=4.8.0           # 電腦視覺工具
+Pillow>=10.0.0                 # 圖像處理
+albumentations>=1.3.0          # 數據增強
+
+# 進度條和系統工具
+tqdm>=4.65.0                   # 進度條
+psutil>=5.9.0                  # 系統資源監控
+
+# 配置和實用工具
+pyyaml>=6.0                    # YAML 配置文件
+python-dotenv>=1.0.0           # 環境變數管理
+
+# Jupyter notebook 支援（可選）
+jupyter>=1.0.0                 # Jupyter notebook
+ipywidgets>=8.0.0              # 互動式小部件
+
+# 模型解釋性和可視化（可選）
+grad-cam>=1.4.0                # Grad-CAM 可視化
+
+# 性能分析工具（可選）
+py-spy>=0.3.14                 # Python 性能分析器
+memory-profiler>=0.61.0        # 記憶體使用分析
+
+# 模型部署工具（可選）
+onnx>=1.14.0                   # ONNX 模型格式
+onnxruntime-gpu>=1.16.0        # ONNX 運行時（GPU版本）
+
+# 測試工具（開發用）
+pytest>=7.4.0                 # 單元測試框架
+pytest-cov>=4.1.0             # 測試覆蓋率
+
+# 程式碼品質工具（開發用）
+black>=23.7.0                 # 程式碼格式化
+isort>=5.12.0                 # import 排序
+flake8>=6.0.0                 # 程式碼檢查

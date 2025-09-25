@@ -1,0 +1,8 @@
+# Project exclude paths
+/retina_classifier/checkpoints/
+/retina_classifier/data/
+/retina_classifier/results/
+
+/.idea/
+/import_dataset.py
+/temp.py
